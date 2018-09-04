@@ -1,0 +1,9 @@
+{
+  "defaultSeverity": "error",
+  "extends": "../src/tslint.json",
+  "jsRules": {},
+  "rules": {
+    "no-implicit-dependencies": [true, "dev"]
+  },
+  "rulesDirectory": []
+}
