@@ -1,0 +1,13 @@
+language: node_js
+node_js:
+  - stable
+  - lts/*
+  - '8'
+deploy:
+  provider: npm
+  email: axel.eirola@iki.fi
+  api_key:
+    secure: rs/5EI3beQKzIqTc1aXdphgbjVHSttuiVgCHi4xB3uQXmwglsGQJNAZ94ksiCbvJFpUiOOrgzZz+DOPPJDI++avS+yjLR/u5PJ66EjKoAJOT4Q/4jH//1vBLMtuKvp56KA3wwlHsxC23kELlBSh+IvcWKg12s2BBdxaZ3K4n0HSKmLC/sFFqjAeEXI4OXTSsPfIWY+jAV8GRCQcTcQeiRI0OT/2k6IX9rnmOdeArLnrtNjNT1m28kUizpVKL2DN7SdlSE4rogRgANlqlYLtFJXo3aLX+Ynu6Z1Xhd3mwNcZkXvyxUl/UXwgYlMWXQSpfP+9A7N33VXsYu3nx6p7XZVDEoqFLX8qTrsvvP5Q6yeqJIsE7lBTk9oCBMUfX60cdnBuHE+OFYzfosLRV/VJAoqo9KEDuqZwnB27e5hamHG32Iy0dAMDMu1pVUlMILyUBj0o6hRkYubtWWQ6dTaydc/JPu1WyN3bWl5FkX6yZfTm6ZwmzBFuiAmvxA5/qXK7DvMI5B2OyLVdGGbSRpZff6iYyUPAfYrben2/OC/PRgsz/Mt58mLkf5BroVWFOHdrdXH8pWH/AbwdNDbZZkLq3tIVIFwM+3oAD8+HNlWHEb7bB991QCiAgMrio9VW05WNOuKtVqyXxuP9B2a+VfHbWyssZMZIAAZ6iwue/m/UCLyo=
+  on:
+    tags: true
+    repo: aeirola/react-native-icon-builder
