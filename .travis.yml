@@ -12,3 +12,7 @@ deploy:
   on:
     tags: true
     repo: aeirola/react-native-icon-builder
+notifications:
+  email:
+    on_success: never
+    on_failure: always
