@@ -52,7 +52,7 @@ describe('CLI', () => {
   ];
 
   const dataIconSizes = [
-    { name: 'icon.svg', size: { width: 72, height: 72 } },
+    { name: 'icon72.svg', size: { width: 72, height: 72 } },
     { name: 'rect.svg', size: { width: 60, height: 40 } },
   ];
 
@@ -121,10 +121,35 @@ describe('CLI', () => {
     expect(fs.readdirSync(tmpDir)).to.deep.equal([]);
   });
 
+  it('should build handle floating point density rounding', () => {
+    const config = {
+      android: {
+        icon: path.join(testDataDir, 'icon100.svg'),
+        outputDir: tmpDir,
+      },
+    };
+
+    const process = buildImages(config);
+    expect(process.status).to.equal(0, process.stderr);
+
+    return Promise.all(
+      androidIconSizes.map(iconSize =>
+        assertImageMetadata(
+          path.join(tmpDir, `mipmap-${iconSize.density}`, 'ic_launcher.png'),
+          {
+            format: 'png',
+            height: iconSize.size,
+            width: iconSize.size,
+          }
+        )
+      )
+    );
+  });
+
   it('should build android icons', () => {
     const config = {
       android: {
-        icon: path.join(testDataDir, 'icon.svg'),
+        icon: path.join(testDataDir, 'icon72.svg'),
         outputDir: tmpDir,
       },
     };
@@ -149,7 +174,7 @@ describe('CLI', () => {
   it('should build ios icons', () => {
     const config = {
       ios: {
-        icon: path.join(testDataDir, 'icon.svg'),
+        icon: path.join(testDataDir, 'icon72.svg'),
         outputDir: tmpDir,
       },
     };

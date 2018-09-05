@@ -250,12 +250,6 @@ function genaratePng(
 
             targetDensity =
               (output.size.width / metadata.width) * metadata.density;
-            if (!Number.isInteger(targetDensity)) {
-              // TODO: Fix once sharp 0.20.8 is released
-              return Promise.reject(
-                'Wrong image size, needs to be divisible by 72'
-              );
-            }
             break;
 
           case Size.Relative:
