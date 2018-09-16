@@ -146,6 +146,25 @@ describe('CLI', () => {
     );
   });
 
+  it('should not rebuild icons', () => {
+    const config = {
+      android: {
+        icon: path.join(testDataDir, 'icon72.svg'),
+        outputDir: tmpDir,
+      },
+    };
+
+    const firstProcess = buildImages(config);
+    expect(firstProcess.status).to.equal(0);
+    expect(firstProcess.stdout.toString()).to.include('Wrote files:');
+    expect(firstProcess.stdout.toString()).not.to.include('No files written.');
+
+    const secondProcess = buildImages(config);
+    expect(secondProcess.status).to.equal(0);
+    expect(secondProcess.stdout.toString()).to.include('No files written.');
+    expect(secondProcess.stdout.toString()).not.to.include('Wrote files:');
+  });
+
   it('should build android icons', () => {
     const config = {
       android: {

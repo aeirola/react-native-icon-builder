@@ -2,7 +2,8 @@ import * as path from 'path';
 
 import fsExtra from 'fs-extra';
 import klawSync from 'klaw-sync';
-import sharp from 'sharp';
+// Sharp lib is rather bulky, only load types here, and whole lib when needed
+import sharpType from 'sharp';
 
 import { IConfig } from './config';
 
@@ -200,81 +201,110 @@ function genaratePngs(
   input: string,
   outputs: IGenerateConfig[]
 ): Promise<string[]> {
-  return fsExtra
-    .readFile(input, { encoding: 'utf-8' })
-    .then(inputData =>
-      Promise.all([
-        Promise.resolve(inputData),
-        sharp(Buffer.from(inputData)).metadata(),
-      ])
-    )
-    .then(([inputSvg, metadata]) =>
-      Promise.all(
-        outputs.map(output => genaratePng(inputSvg, metadata, output))
+  return filterOutputs(input, outputs).then(
+    filteredOutputs =>
+      filteredOutputs.length === 0
+        ? // Nothing to generate
+          Promise.resolve([])
+        : // Something to generate
+          // Load sharp and input image
+          Promise.all([
+            import('sharp').then(sharpImport => sharpImport.default),
+            fsExtra.readFile(input, { encoding: 'utf-8' }),
+          ]).then(([sharp, inputData]) =>
+            sharp(Buffer.from(inputData))
+              .metadata()
+              .then(metadata =>
+                Promise.all(
+                  filteredOutputs.map(output =>
+                    genaratePng(sharp, inputData, metadata, output)
+                  )
+                )
+              )
+          )
+  );
+}
+
+function filterOutputs(
+  input: string,
+  outputs: IGenerateConfig[]
+): Promise<IGenerateConfig[]> {
+  return Promise.all([
+    fsExtra.stat(input),
+    Promise.all(
+      outputs.map(output =>
+        fsExtra
+          .stat(output.filePath)
+          .catch(() => null)
+          .then(outputStat => ({ config: output, stats: outputStat }))
       )
-    );
+    ),
+  ]).then(([inputStat, outputStats]) =>
+    outputStats
+      .filter(
+        outputStat =>
+          outputStat.stats === null ||
+          inputStat.mtimeMs > outputStat.stats.mtimeMs
+      )
+      .map(outputStat => outputStat.config)
+  );
 }
 
 function genaratePng(
+  sharp: typeof sharpType,
   inputSvg: string,
-  metadata: sharp.Metadata,
+  metadata: sharpType.Metadata,
   output: IGenerateConfig
 ): Promise<string> {
-  return (
-    fsExtra
-      .ensureDir(path.dirname(output.filePath))
-      // TODO: Compare timestamps, and generate only if updated
-      .then(() => {
-        if (metadata.format !== 'svg') {
+  return fsExtra.ensureDir(path.dirname(output.filePath)).then(() => {
+    if (metadata.format !== 'svg') {
+      return Promise.reject(
+        `Unsupported image format ${
+          metadata.format
+        }. Only SVG images are supported.`
+      );
+    }
+
+    if (!metadata.density || !metadata.width || !metadata.height) {
+      return Promise.reject('Unsupported image, missing size and density');
+    }
+
+    let targetDensity: number;
+    switch (output.size.type) {
+      case Size.Absolute:
+        const inputAspectRatio = metadata.width / metadata.height;
+        const outputAspectRatio = output.size.width / output.size.height;
+        if (inputAspectRatio !== outputAspectRatio) {
           return Promise.reject(
-            `Unsupported image format ${
-              metadata.format
-            }. Only SVG images are supported.`
+            `Incompatible image aspect ratio. Expected 1:${outputAspectRatio}, got 1:${inputAspectRatio}`
           );
         }
 
-        if (!metadata.density || !metadata.width || !metadata.height) {
-          return Promise.reject('Unsupported image, missing size and density');
-        }
+        targetDensity = (output.size.width / metadata.width) * metadata.density;
+        break;
 
-        let targetDensity: number;
-        switch (output.size.type) {
-          case Size.Absolute:
-            const inputAspectRatio = metadata.width / metadata.height;
-            const outputAspectRatio = output.size.width / output.size.height;
-            if (inputAspectRatio !== outputAspectRatio) {
-              return Promise.reject(
-                `Incompatible image aspect ratio. Expected 1:${outputAspectRatio}, got 1:${inputAspectRatio}`
-              );
-            }
+      case Size.Relative:
+        targetDensity = output.size.scale * metadata.density;
+        break;
 
-            targetDensity =
-              (output.size.width / metadata.width) * metadata.density;
-            break;
+      default:
+        return assertNever(output.size);
+    }
 
-          case Size.Relative:
-            targetDensity = output.size.scale * metadata.density;
-            break;
+    let image = sharp(Buffer.from(inputSvg), { density: targetDensity });
 
-          default:
-            return assertNever(output.size);
-        }
+    if (output.flattenAlpha) {
+      image = image.flatten();
+    }
 
-        let image = sharp(Buffer.from(inputSvg), { density: targetDensity });
-
-        if (output.flattenAlpha) {
-          image = image.flatten();
-        }
-
-        return image
-          .png({
-            adaptiveFiltering: false,
-            compressionLevel: 9,
-          })
-          .toFile(output.filePath)
-          .then(() => output.filePath);
+    return image
+      .png({
+        adaptiveFiltering: false,
+        compressionLevel: 9,
       })
-  );
+      .toFile(output.filePath)
+      .then(() => output.filePath);
+  });
 }
 
 function assertNever(x: never): never {

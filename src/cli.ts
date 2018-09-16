@@ -26,10 +26,14 @@ function main(args: string[]) {
   generate(config)
     .then(generatedFiles => {
       process.stdout.write(' done!\n');
-      process.stdout.write('Wrote:\n');
-      generatedFiles.forEach(generatedFile =>
-        process.stdout.write(`- ${generatedFile}\n`)
-      );
+      if (generatedFiles.length === 0) {
+        process.stdout.write('No files written.\n');
+      } else {
+        process.stdout.write('Wrote files:\n');
+        generatedFiles.forEach(generatedFile =>
+          process.stdout.write(`- ${generatedFile}\n`)
+        );
+      }
     })
     .catch(err => {
       process.stdout.write('\n');
