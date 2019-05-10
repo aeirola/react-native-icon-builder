@@ -209,7 +209,9 @@ function genaratePngs(
         : // Something to generate
           // Load sharp and input image
           Promise.all([
-            import('sharp').then(sharpImport => sharpImport.default),
+            import('sharp')
+              .then(sharpImport => sharpImport.default)
+              .then(warmupSharp),
             fsExtra.readFile(input, { encoding: 'utf-8' }),
           ]).then(([sharp, inputData]) =>
             sharp(Buffer.from(inputData))
@@ -223,6 +225,19 @@ function genaratePngs(
               )
           )
   );
+}
+
+// First run might cause a xmllib error, run safe warmup
+// See https://github.com/lovell/sharp/issues/1593
+function warmupSharp(sharp: typeof sharpType): Promise<typeof sharpType> {
+  return sharp(
+    Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" /></svg>`,
+      'utf-8'
+    )
+  )
+    .metadata()
+    .then(() => sharp, () => sharp);
 }
 
 function filterOutputs(
