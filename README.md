@@ -1,5 +1,7 @@
 # react-native-icon-builder
 
+:warning: **Package has been deprecated in favor of [react-native-svg-app-icon](https://github.com/aeirola/react-native-svg-app-icon) and [react-native-svg-asset-plugin](https://github.com/aeirola/react-native-svg-asset-plugin)**
+
 Mobile app icon generator for React Native projects.
 
 ## Features
